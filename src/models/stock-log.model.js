@@ -2,6 +2,12 @@ import mongoose from "mongoose";
 
 const stockLogSchema = new mongoose.Schema(
   {
+    shopId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Shop",
+      required: true,
+      index: true,
+    },
     type: {
       type: String,
       required: true,

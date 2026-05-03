@@ -1,6 +1,24 @@
 export const parseCommand = (text) => {
   const normalized = text.toLowerCase().trim();
 
+  if (normalized === "start") {
+    return { intent: "START" };
+  }
+
+  if (["activity", "activity today", "today activity"].includes(normalized)) {
+    return { intent: "ACTIVITY" };
+  }
+
+  if (normalized.startsWith("add staff ")) {
+    const body = normalized.replace(/^add staff\s+/, "").trim();
+    const parts = body.split(/\s+/);
+    const staffPhone = parts[0] || null;
+    const role = ["salesman", "owner"].includes(parts[1])
+      ? parts[1]
+      : "salesman";
+    return { intent: "ADD_STAFF", staffPhone, role };
+  }
+
   if (["help", "/help"].includes(normalized)) {
     return {
       intent: "HELP",
