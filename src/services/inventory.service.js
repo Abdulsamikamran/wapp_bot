@@ -3,25 +3,32 @@ import { Sale } from "../models/sale.model.js";
 import { StockLog } from "../models/stock-log.model.js";
 import { escapeRegex, normalizeProductName } from "../utils/text.js";
 
-export const findProduct = async (searchTerm) => {
+export const findProduct = async (shopId, searchTerm) => {
   const normalizedSearch = normalizeProductName(searchTerm);
 
   if (!normalizedSearch) return null;
 
-  const exact = await Product.findOne({ normalizedName: normalizedSearch });
+  const exact = await Product.findOne({
+    shopId,
+    normalizedName: normalizedSearch,
+  });
   if (exact) return exact;
 
   const partialRegex = new RegExp(escapeRegex(normalizedSearch), "i");
-  return Product.findOne({ normalizedName: partialRegex });
+  return Product.findOne({ shopId, normalizedName: partialRegex });
 };
 
 export const addStock = async (command) => {
   const normalizedName = normalizeProductName(command.productName);
 
-  let product = await Product.findOne({ normalizedName });
+  let product = await Product.findOne({
+    shopId: command.shopId,
+    normalizedName,
+  });
 
   if (!product) {
     product = await Product.create({
+      shopId: command.shopId,
       name: command.productName.trim(),
       normalizedName,
       quantity: command.quantity,
@@ -39,6 +46,7 @@ export const addStock = async (command) => {
   }
 
   await StockLog.create({
+    shopId: command.shopId,
     type: "ADD_STOCK",
     productName: product.name,
     quantity: command.quantity,
@@ -50,50 +58,32 @@ export const addStock = async (command) => {
 };
 
 export const sellProduct = async (command) => {
-  const product = await findProduct(command.productName);
+  const product = await findProduct(command.shopId, command.productName);
 
   if (!product) {
-    return {
-      success: false,
-      reason: "PRODUCT_NOT_FOUND",
-    };
+    return { success: false, reason: "PRODUCT_NOT_FOUND" };
   }
 
   if (product.quantity < command.quantity) {
-    return {
-      success: false,
-      reason: "LOW_STOCK",
-      product,
-    };
+    return { success: false, reason: "LOW_STOCK", product };
   }
 
   const costTotal = product.costPrice * command.quantity;
   const profit = command.amount - costTotal;
 
   const updatedProduct = await Product.findOneAndUpdate(
-    {
-      _id: product._id,
-      quantity: { $gte: command.quantity },
-    },
-    {
-      $inc: {
-        quantity: -command.quantity,
-        totalSold: command.quantity,
-      },
-    },
+    { _id: product._id, quantity: { $gte: command.quantity } },
+    { $inc: { quantity: -command.quantity, totalSold: command.quantity } },
     { new: true },
   );
 
   if (!updatedProduct) {
     const refreshedProduct = await Product.findById(product._id);
-    return {
-      success: false,
-      reason: "LOW_STOCK",
-      product: refreshedProduct,
-    };
+    return { success: false, reason: "LOW_STOCK", product: refreshedProduct };
   }
 
   const sale = await Sale.create({
+    shopId: command.shopId,
     productName: updatedProduct.name,
     quantity: command.quantity,
     paymentMethod: command.paymentMethod,
@@ -102,14 +92,10 @@ export const sellProduct = async (command) => {
     profit,
   });
 
-  return {
-    success: true,
-    product: updatedProduct,
-    sale,
-  };
+  return { success: true, product: updatedProduct, sale };
 };
 
-export const getTodayReport = async () => {
+export const getTodayReport = async (shopId) => {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
@@ -118,12 +104,10 @@ export const getTodayReport = async () => {
 
   const [sales, products] = await Promise.all([
     Sale.find({
-      createdAt: {
-        $gte: startOfDay,
-        $lt: startOfTomorrow,
-      },
+      shopId,
+      createdAt: { $gte: startOfDay, $lt: startOfTomorrow },
     }),
-    Product.find(),
+    Product.find({ shopId }),
   ]);
 
   const totalSales = sales.reduce((sum, sale) => sum + sale.amount, 0);
