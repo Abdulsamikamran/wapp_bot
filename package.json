@@ -1,0 +1,23 @@
+{
+  "name": "stockmunshi-bot",
+  "version": "1.0.0",
+  "description": "WhatsApp inventory and sales bot with MongoDB persistence",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"No tests configured\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mongoose": "^8.19.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

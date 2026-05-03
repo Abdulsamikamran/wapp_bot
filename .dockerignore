@@ -1,0 +1,23 @@
+# Dependencies
+node_modules
+
+# Environment secrets
+.env
+.env.*
+
+# Logs
+npm-debug.log*
+*.log
+logs
+
+# Git
+.git
+.gitignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode
+.idea

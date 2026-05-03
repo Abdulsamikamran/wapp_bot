@@ -1,0 +1,31 @@
+services:
+  app:
+    build: .
+    container_name: stockmunshi-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    env_file:
+      - .env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/stockmunshi
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  mongo:
+    image: mongo:7
+    container_name: stockmunshi-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo_data:

@@ -1,0 +1,25 @@
+# Dependencies
+node_modules
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+npm-debug.log*
+*.log
+logs/
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode
+.idea
+*.swp
+*.swo
